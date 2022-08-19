@@ -1,0 +1,43 @@
+runtime: 248 ms, faster than 8.25% of C# online submissions for Binary Search.
+Memory Usage: 42.7 MB, less than 39.64% of C# online submissions for Binary Search.
+
+Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1.
+
+You must write an algorithm with O(log n) runtime complexity.
+
+public class Solution {
+    public int Search(int[] nums, int target) {
+        int index = 0;
+        int result = -1;
+        if(nums.Length == 0){
+            return result;
+        }
+        if(Math.Abs(target - nums[0]) > Math.Abs(nums[nums.Length - 1] - target)){
+           index = nums.Length - 1;
+        }
+        else{
+            index = 0;
+        }
+        if(index == 0){
+             while(index < (nums.Length - 1)){
+            if (target == nums[index]){
+                result = index;
+                return result;
+            }
+            index = index +1;
+        }
+        }
+         if(index == nums.Length - 1){
+             while(index >= 0){
+              
+            if (target == nums[index]){
+                result = index;
+                return result;
+            }
+            index = index-1;
+        }
+    }
+        return result;
+      
+}
+}
