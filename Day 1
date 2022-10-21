@@ -1,0 +1,24 @@
+Consistency is the key to success
+Pre Order Transversal ( root- left-right)
+InOrder Transversal ( left- right-root)
+PostOrder Transversal ( left - right - root) 
+
+
+public IList<int> PreorderTraversal(TreeNode root) {
+       List<int> list = new List<int>();
+     if(root == null){
+         return list;
+     }  
+	Stack<TreeNode> newStack = new Stack<TreeNode>();
+	while(root != null) {
+		list.Add(root.val);
+		if (root.right != null) {
+			newStack.Push(root.right);
+		}
+		root = root.left;
+		if (root == null && newStack.Count() > 0) {
+			root = newStack.Pop();
+		}
+	}
+    return list;
+}
