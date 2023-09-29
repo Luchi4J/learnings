@@ -1,0 +1,106 @@
+ public class GetSigningRequestByReferenceNumberQuery : AuthToken, IRequest<Result>
+    {
+        public JwtSecurityToken APIUserDetails { get; set; }
+        public string ReferenceNumber { get; set; }
+    }
+    public class GetSigningRequestByReferenceNumberQueryHandler : IRequestHandler<GetSigningRequestByReferenceNumberQuery, Result>
+    {
+        private readonly IApplicationDbContext _context;
+        private readonly IAuthService _authService;
+        private readonly IMapper _mapper;
+        private readonly IAESEncryptionService _encryptionService;
+        private readonly IDocumentManagementService _documentManagementService;
+        private readonly IConfiguration _configuration;
+
+        public GetSigningRequestByReferenceNumberQueryHandler(IApplicationDbContext context, IAuthService authService,
+              IMapper mapper, IAESEncryptionService encryptionService, IDocumentManagementService documentManagementService,
+              IConfiguration configuration)
+        {
+            _authService = authService;
+            _context = context;
+            _mapper = mapper;
+            _encryptionService = encryptionService;
+            _documentManagementService = documentManagementService;
+            _configuration = configuration;
+        }
+        public async Task<Result> Handle(GetSigningRequestByReferenceNumberQuery request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var userId = request.APIUserDetails.Claims.First(claim => claim.Type == "userid")?.Value;
+                if (userId == null)
+                {
+                    return Result.Failure<GetSigningRequestByReferenceNumberQuery>("Please check your access token, Invalid User details specified.");
+                }
+                var subscriberId = request.APIUserDetails.Claims.First(claim => claim.Type == "subscriberId")?.Value;
+                if (subscriberId == null)
+                {
+                    return Result.Failure<GetSigningRequestByReferenceNumberQuery>("Please check your access token, Invalid subscriber details specified.");
+                }
+                _ = await _authService.ValidateSubscriberData(request.AccessToken, subscriberId.ToInt(), userId);
+                if (_authService.Subscriber == null || _authService.User == null)
+                {
+                    return Result.Failure<GetSigningRequestByReferenceNumberQuery>("Invalid User details specified.");
+                }
+
+                var signingRequests = await _context.SigningRequests
+                    .Include(c => c.Documents).ThenInclude(c => c.Recipients).FirstOrDefaultAsync(a => a.SubscriberId == subscriberId.ToInt() &&
+                    a.Status == Status.Active && a.SigningRequestType == SigningRequestType.API
+                    && a.ReferenceNumber == request.ReferenceNumber);
+                if (signingRequests == null)
+                    return Result.Failure<GetSigningRequestByReferenceNumberQuery>("Signing request not found");
+                List<Document> documents = signingRequests.Documents.Where(x => x.DocumentStatus == DocumentStatus.Completed).ToList();
+                List<DocumentDto> documentDto = new List<DocumentDto>();
+                if (documents != null && documents.Count > 0)
+                {
+                    documentDto = await GetFileBytes(documents);
+                }
+                else
+                {
+                    documents = signingRequests.Documents.Where(x => x.DocumentStatus != DocumentStatus.Completed).ToList();
+                    if (documents != null && documents.Count > 0)
+                    {
+                        documents.ForEach(a => a.File = a.SignedDocument);
+                        documentDto = await GetFileBytes(documents);
+                    }
+                }
+                var signingRequestDto = _mapper.Map<SigningRequestDocumentDto>(signingRequests);
+                signingRequestDto.Documents = documentDto;
+                if (signingRequests.EncryptionKeyId != null)
+                {
+                    var encryptionkey = await _context.EncryptionKeys.FirstOrDefaultAsync(x => x.AppId == signingRequests.AppId && x.Status == Status.Active);
+                    if (encryptionkey != null)
+                    {
+                        string key = await _encryptionService.Decrypt(encryptionkey.Key);
+                        var jsonData = JsonConvert.SerializeObject(signingRequestDto);
+                        var encryptedData = await _encryptionService.Encrypt(jsonData, key, key);
+                        return Result.Success(encryptedData);
+                    }
+                }
+
+                return Result.Success(signingRequestDto);
+
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<GetSigningRequestByReferenceNumberQuery>($"Error retrieving API signing requests - {ex?.Message ?? ex?.InnerException?.Message}");
+            }
+        }
+        private async Task<List<DocumentDto>> GetFileBytes(List<Domain.Entities.Document> documents)
+        {
+            List<DocumentDto> documentDto = _mapper.Map<List<DocumentDto>>(documents);
+            foreach (var item in documentDto)
+            {
+                item.File = item.File != null && item.File.Contains("https://")
+                            ? item.File
+                            : _configuration["BlobConnectionStrings:Link"] + item.Name;
+                if (!string.IsNullOrWhiteSpace(item.File))
+                {
+                    item.FileBytes = await _documentManagementService.GetDocumentBytes(item.File);
+                    item.File = "";
+
+                }
+            }
+            return documentDto;
+        }
+    }
