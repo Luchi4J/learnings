@@ -1,0 +1,49 @@
+1)	Two Sum - LeetCode  (I learnt the concept of using dictionary or hashmap to solve array problems)
+public class Solution {
+    public int[] TwoSum(int[] nums, int target) {
+     //store the first index
+     //store the last index
+     //then move the pointers until you get to the one that matches the target
+
+     //suboptimal solution (O(n2))
+    //  int j = 0;
+    //  while (j <= nums.Length-1){
+    //     for(int i=0; i <= nums.Length-1; i++){
+    //         if(j==i){continue;}
+    //         if(nums[j]+ nums[i] == target){
+    //         return new int[]{i,j};
+    //       }
+    //     }
+    //     j++;
+    //  }
+    //  return null;
+      //more optimal solution using dictionary(hashmap) O(n)
+      Dictionary<int,int> result = new Dictionary<int,int>();
+       for(int i=0; i <= nums.Length-1; i++){
+            int index = target - nums[i];
+            if(result.ContainsKey(index)){
+                return  new int[]{result[index],i};
+            }
+            else{
+                result[nums[i]]=i;
+            }
+          }
+        return new int[0];
+        }
+}
+
+
+2) Contains Duplicate - LeetCode (I learnt the concept of using dictionary or hashmap to solve array problems)
+
+ public bool ContainsDuplicate(int[] nums) {
+        //brute force loop through each of them
+    Dictionary<int,int> result = new  Dictionary<int,int>();
+        for (int i=0; i <= nums.Length-1;i++){
+          if(result.ContainsKey(nums[i])){
+                return true;
+            }
+            else result[nums[i]] = i;
+        }
+      return false;  
+    }
+
