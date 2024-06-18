@@ -60,3 +60,46 @@ public bool IsAnagram(string s, string t) {
     //  }
     //   return true; 
     // }
+----Most efficient solution
+public class Solution {
+    public bool IsAnagram(string s, string t) {
+        //check for nulls first and return false first
+       if(string.IsNullOrEmpty(s) || string.IsNullOrEmpty(t)){
+          return false;
+        }
+     if(s.Length != t.Length){
+        return false;
+      }
+      Dictionary<char, int> loopDictionary = new  Dictionary<char, int>();
+     foreach(var counter in s)
+     {
+     if (loopDictionary.ContainsKey(counter)) {
+         loopDictionary[counter]++; 
+     }
+     else{
+        loopDictionary.Add(counter,1);
+     }
+    }
+
+    foreach(var counter in t)
+     {
+     if (loopDictionary.ContainsKey(counter))
+        loopDictionary[counter]--; 
+     }
+     foreach(var value in loopDictionary.Values){
+      if(value != 0)
+       return false;
+    }
+    return true;
+    }
+    //  string sortedStringS = new string(s.OrderBy(c => c).ToArray());
+    //  string sortedStringT = new string(t.OrderBy(c => c).ToArray());
+     
+    //  for(int counter = 0; counter <= t.Length - 1; counter++)
+    //  {
+    //     if (sortedStringS[counter] != sortedStringT[counter]) 
+    //         return false; 
+    //  }
+    //   return true; 
+    // }
+}
