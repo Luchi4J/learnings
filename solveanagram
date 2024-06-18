@@ -1,0 +1,62 @@
+first solution
+
+public class Solution {
+    public bool IsAnagram(string s, string t) {
+        //check for nulls first and return false first
+       if(string.IsNullOrEmpty(s) || string.IsNullOrEmpty(t)){
+          return false;
+       }
+       if(s.Length != t.Length){
+          return false;
+       }
+     string sortedStringS = new string(s.OrderBy(c => c).ToArray());
+     string sortedStringT = new string(t.OrderBy(c => c).ToArray());
+     
+     for(int counter = 0; counter <= t.Length - 1; counter++)
+     {
+        if (sortedStringS[counter] != sortedStringT[counter]) 
+            return false; 
+     }
+      return true; 
+    }
+}
+-- second solution space and time complexity of o(n) 
+public bool IsAnagram(string s, string t) {
+        //check for nulls first and return false first
+       if(string.IsNullOrEmpty(s) || string.IsNullOrEmpty(t)){
+          return false;
+        }
+     if(s.Length != t.Length){
+        return false;
+      }
+      Dictionary<string, int> loopDictionary = new  Dictionary<string, int>();
+    for(int counter = 0; counter <= s.Length - 1; counter++)
+     {
+     if (loopDictionary.ContainsKey(s[counter].ToString())) {
+         loopDictionary[s[counter].ToString()]++; 
+     }
+     else{
+        loopDictionary.Add(s[counter].ToString(),1);
+     }
+    }
+
+     for(int counter = 0; counter <= t.Length - 1; counter++)
+     {
+     if (loopDictionary.ContainsKey(t[counter].ToString()))
+        loopDictionary[t[counter].ToString()]--; 
+     }
+     if(loopDictionary.Values.All(x=>x == 0))
+      return true;
+      else
+      return false;
+    }
+    //  string sortedStringS = new string(s.OrderBy(c => c).ToArray());
+    //  string sortedStringT = new string(t.OrderBy(c => c).ToArray());
+     
+    //  for(int counter = 0; counter <= t.Length - 1; counter++)
+    //  {
+    //     if (sortedStringS[counter] != sortedStringT[counter]) 
+    //         return false; 
+    //  }
+    //   return true; 
+    // }
